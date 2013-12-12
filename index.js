@@ -16,8 +16,9 @@ function parse(p) {
 	//console.log(p.toString().split('\n'));
 	var j = p.toString().split('\n');
 	for (var i in j) {
-		var k = j[i].slice('\t');
-		// 
+		j[i] = j[i].replace(' ','')
+		var k = j[i].split('\t');
+		console.log(k);
 	}
 }
 
