@@ -60,7 +60,7 @@ bashcoin.stdout.on('data',function(d){
 	function clone(c) {
 		var _ = {};
 		for (var i in c) {
-			_[i] = c[i] * .000001;
+			_[i] = c[i] * .00000001;
 		}
 		return _;
 	}
