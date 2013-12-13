@@ -12,15 +12,7 @@ var spawn = require('child_process').spawn;
 var bashcoin = spawn('./node_modules/bashcoin/bashcoin.js',['-c','-A']);
 var brain = require('brain');
 var NeuralNetwork = brain.NeuralNetwork;
-var neuralNetwork = new NeuralNetwork();
-neuralNetwork.trainedCounter = 0;
-neuralNetwork.setTrainedCounter = function() {
-	this.trainedCounter++;
-}
-neuralNetwork.getTrainedCounter = function() {
-	return this.trainedCounter;
-}
-var trainedCounter = 0;
+
 var lastUpdate = {
 	buy: null,
 	sell: null,
@@ -33,7 +25,7 @@ var lastUpdate = {
 	spread: null
 };
 var updates = [];
-var cash = 99.99;
+var cash = 999.99;
 var btc = 0.99;
 var s;
 
@@ -68,7 +60,7 @@ bashcoin.stdout.on('data',function(d){
 	function clone(c) {
 		var _ = {};
 		for (var i in c) {
-			_[i] = c[i];
+			_[i] = c[i] * .000001;
 		}
 		return _;
 	}
@@ -82,15 +74,26 @@ bashcoin.stdout.on('data',function(d){
 			output: clone(lastUpdate)
 		}
 	);
-	//console.log(updates);
+	console.log(updates);
 	// [{input:{update},output:{time}},{},{}]
+	var neuralNetwork = new NeuralNetwork();
+	neuralNetwork.trainedCounter = 0;
+	neuralNetwork.setTrainedCounter = function() {
+		this.trainedCounter++;
+	}
+	neuralNetwork.getTrainedCounter = function() {
+		return this.trainedCounter;
+	}
 	neuralNetwork.train(updates);
+	var output = neuralNetwork.run({date_:new Date().getTime()});
+	console.log(output);
+	console.log(new Date().getTime());
 	neuralNetwork.setTrainedCounter();
 	s = ' \033[34m#\033[0m ' + bashcoin.pid +
 		' \033[35mt\033[0m ' + neuralNetwork.getTrainedCounter() +
 		' \033[32m$\033[0m ' + cash +
 		' \033[33mBTC\033[0m ' + btc;
-	stream(s);
+	console.log(s);
 });
 
 bashcoin.stderr.on('data',function(d){
