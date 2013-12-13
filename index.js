@@ -97,10 +97,10 @@ bashcoin.stdout.on('data',function(d){
 		}));
 		trainedCounter++;
 		if (output.length > 1) {
-			if (output[output.length-1].buy < output[output.length-2].buy) {
+			if (output[output.length-1].buy > output[output.length-2].buy) {
 				prediction = 'buy';
 				buy(lastUpdate.buy);
-			} else if (output[output.length-1].buy > output[output.length-2].buy) {
+			} else if (output[output.length-1].buy < output[output.length-2].buy) {
 				prediction = 'sell';
 				sell(lastUpdate.sell);
 			} else {
