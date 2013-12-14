@@ -32,6 +32,7 @@ var prediction;
 var output = [];
 var s;
 var buyout = 0;
+var predictions = null;
 
 function stream(s) {
 	process.stdout.write('\r');
@@ -119,6 +120,15 @@ bashcoin.stdout.on('data',function(d){
 			' \033[36mRate\033[0m ' + ((lastUpdate.buy+lastUpdate.sell)/2) +
 			' \033[31mPrediction\033[0m ' + prediction +
 			' \033[34mBuyout\033[0m ' + buyout;
+		predictions = {
+			t: trainedCounter,
+			cash: cash,
+			btc: btc,
+			rate: rate,
+			prediction: prediction,
+			buyout: buyout,
+			profit: buyout - 10000
+		};
 		console.log(s);
 	}
 });
@@ -129,4 +139,18 @@ bashcoin.stderr.on('data',function(d){
 
 bashcoin.on('close',function(d){
 	process.stdout.write(d);
+});
+
+var mario = require('mario-mario');
+mario.plumbing({
+	http: {
+		get: {
+			'/echo': function (q,r) {
+				return r.send({echo : 'echo'});
+			},
+			'/predictions': function(q,r) {
+				return r.send(predictions);
+			}
+		}
+	}
 });
