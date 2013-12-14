@@ -25,12 +25,13 @@ var lastUpdate = {
 	spread: null
 };
 var updates = [];
-var cash = 999.99;
-var btc = 0.99;
+var cash = 10000;
+var btc = 0;
 var rate = 0;
 var prediction;
 var output = [];
 var s;
+var buyout = 0;
 
 function stream(s) {
 	process.stdout.write('\r');
@@ -38,15 +39,19 @@ function stream(s) {
 }
 
 function buy(r) {
-	var numBitcoins = .01;
-	cash = cash - (numBitcoins*r);
-	btc = btc + numBitcoins;
+	if ((1 * r) <= cash) {
+		var numBitcoins = 1;
+		cash = cash - (numBitcoins*r);
+		btc = btc + numBitcoins;
+	}
 }
 
 function sell(r) {
-	var numBitcoins = .01;
-	cash = cash + (numBitcoins*r);
-	btc = btc - numBitcoins;
+	if (btc > 1) {
+		var numBitcoins = 1;
+		cash = cash + (numBitcoins*r);
+		btc = btc - numBitcoins;
+	}
 }
 
 bashcoin.stdout.on('data',function(d){
@@ -107,12 +112,13 @@ bashcoin.stdout.on('data',function(d){
 				prediction = 'stay';
 			}
 		}
-		s = ' \033[34m#\033[0m ' + bashcoin.pid +
-			' \033[35mt\033[0m ' + trainedCounter +
+		buyout = (btc * lastUpdate.sell) + cash;
+		s = ' \033[35mt\033[0m ' + trainedCounter +
 			' \033[32m$\033[0m ' + cash +
 			' \033[33mBTC\033[0m ' + btc +
 			' \033[36mRate\033[0m ' + ((lastUpdate.buy+lastUpdate.sell)/2) +
-			' \033[31mPrediction\033[0m ' + prediction;
+			' \033[31mPrediction\033[0m ' + prediction +
+			' \033[34mBuyout\033[0m ' + buyout;
 		console.log(s);
 	}
 });
