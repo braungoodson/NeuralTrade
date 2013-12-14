@@ -47,7 +47,7 @@ function buy(r) {
 }
 
 function sell(r) {
-	if (btc > 1) {
+	if (btc >= 1) {
 		var numBitcoins = 1;
 		cash = cash + (numBitcoins*r);
 		btc = btc - numBitcoins;
