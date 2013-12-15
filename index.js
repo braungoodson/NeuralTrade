@@ -144,7 +144,7 @@ bashcoin.on('close',function(d){
 
 var mario = require('mario-mario');
 mario.plumbing({
-	port: 10003,
+	port: 10000,
 	http: {
 		get: {
 			'/': function (q,r) {
