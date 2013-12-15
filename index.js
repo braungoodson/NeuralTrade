@@ -25,13 +25,14 @@ var lastUpdate = {
 	spread: null
 };
 var updates = [];
-var cash = 10000;
+var cash = 10;
 var btc = 0;
 var rate = 0;
 var prediction;
 var output = [];
 var s;
 var buyout = 0;
+var predictions = null;
 
 function stream(s) {
 	process.stdout.write('\r');
@@ -39,16 +40,16 @@ function stream(s) {
 }
 
 function buy(r) {
-	if ((1 * r) <= cash) {
-		var numBitcoins = 1;
+	if ((.01 * r) <= cash) {
+		var numBitcoins = .01;
 		cash = cash - (numBitcoins*r);
 		btc = btc + numBitcoins;
 	}
 }
 
 function sell(r) {
-	if (btc >= 1) {
-		var numBitcoins = 1;
+	if (btc >= .01) {
+		var numBitcoins = .01;
 		cash = cash + (numBitcoins*r);
 		btc = btc - numBitcoins;
 	}
@@ -98,7 +99,7 @@ bashcoin.stdout.on('data',function(d){
 		var neuralNetwork = new NeuralNetwork();
 		neuralNetwork.train(updates);
 		output.push(neuralNetwork.run({
-			date_: new Date().getTime() + 30000
+			date_: new Date().getTime() + 600000
 		}));
 		trainedCounter++;
 		if (output.length > 1) {
@@ -112,13 +113,23 @@ bashcoin.stdout.on('data',function(d){
 				prediction = 'stay';
 			}
 		}
+		rate = ((lastUpdate.buy+lastUpdate.sell)/2);
 		buyout = (btc * lastUpdate.sell) + cash;
 		s = ' \033[35mt\033[0m ' + trainedCounter +
 			' \033[32m$\033[0m ' + cash +
 			' \033[33mBTC\033[0m ' + btc +
-			' \033[36mRate\033[0m ' + ((lastUpdate.buy+lastUpdate.sell)/2) +
+			' \033[36mRate\033[0m ' + rate +
 			' \033[31mPrediction\033[0m ' + prediction +
 			' \033[34mBuyout\033[0m ' + buyout;
+		predictions = {
+			t: trainedCounter,
+			cash: cash,
+			btc: btc,
+			rate: rate,
+			prediction: prediction,
+			buyout: buyout,
+			profit: buyout - 10
+		};
 		console.log(s);
 	}
 });
@@ -129,4 +140,22 @@ bashcoin.stderr.on('data',function(d){
 
 bashcoin.on('close',function(d){
 	process.stdout.write(d);
+});
+
+var mario = require('mario-mario');
+mario.plumbing({
+	port: 10003,
+	http: {
+		get: {
+			'/': function (q,r) {
+
+			},
+			'/echo': function (q,r) {
+				return r.send({echo : 'echo'});
+			},
+			'/predictions': function(q,r) {
+				return r.send(predictions);
+			}
+		}
+	}
 });
