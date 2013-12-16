@@ -25,7 +25,7 @@ var lastUpdate = {
 	spread: null
 };
 var updates = [];
-var cash = 10;
+var cash = 20000;
 var btc = 0;
 var rate = 0;
 var prediction;
@@ -40,18 +40,44 @@ function stream(s) {
 }
 
 function buy(r) {
-	if ((.01 * r) <= cash) {
-		var numBitcoins = .01;
-		cash = cash - (numBitcoins*r);
-		btc = btc + numBitcoins;
+	var d = Math.random();
+	var time;
+	if (Math.abs(d * 10000) >= 5000) {
+		if (((.5 * r)+(r * .0025)) <= cash) {
+			//d = Math.random() * 1000;
+			//if (Math.abs(d) <= 500) {
+				time = Math.abs(Math.random() * 100000);
+				setTimeout(function(){
+					if (((.5 * r)+(r * .0025)) <= cash) {
+						var numBitcoins = 1;
+						cash = cash - (numBitcoins*r);
+						cash = cash - (r * .0025);
+						btc = btc + numBitcoins;
+					}
+				},time);
+			//}
+		}
 	}
 }
 
 function sell(r) {
-	if (btc >= .01) {
-		var numBitcoins = .01;
-		cash = cash + (numBitcoins*r);
-		btc = btc - numBitcoins;
+	var d = Math.random();
+	var time;
+	if (Math.abs(d * 10000) >= 5000) {
+		if (btc >= (.5 + .0025)) {
+			//d = Math.random() * 1000;
+			//if (Math.abs(d) <= 500) {
+				time = Math.abs(Math.random() * 100000);
+				setTimeout(function(){
+					if (btc >= (.5 + .0025)) {
+						var numBitcoins = .5;
+						cash = cash + (numBitcoins*r);
+						cash = cash - (r * .0025);
+						btc = btc - numBitcoins;
+					}
+				},time);
+			//}
+		}
 	}
 }
 
@@ -99,7 +125,7 @@ bashcoin.stdout.on('data',function(d){
 		var neuralNetwork = new NeuralNetwork();
 		neuralNetwork.train(updates);
 		output.push(neuralNetwork.run({
-			date_: new Date().getTime() + 600000
+			date_: new Date().getTime() + 50000
 		}));
 		trainedCounter++;
 		if (output.length > 1) {
@@ -128,7 +154,7 @@ bashcoin.stdout.on('data',function(d){
 			rate: rate,
 			prediction: prediction,
 			buyout: buyout,
-			profit: buyout - 10
+			profit: buyout - 20000
 		};
 		console.log(s);
 	}
@@ -144,7 +170,7 @@ bashcoin.on('close',function(d){
 
 var mario = require('mario-mario');
 mario.plumbing({
-	port: 10000,
+	port: 10001,
 	http: {
 		get: {
 			'/': function (q,r) {
