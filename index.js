@@ -3,13 +3,13 @@ var N = require('brain').NeuralNetwork;
 
 var trainingData = [];
 var predictions = [];
-var buyIn = 1500;
-var cash = 1500;
+var buyIn = 15;
+var cash = 15;
 var btc = 0;
 var profit = 0;
 var rate = 0;
 var prediction;
-var chip = .5;
+var chip = .01;
 var fee = .0025;
 
 predictions.push({});
@@ -123,4 +123,25 @@ setInterval(function(){
 		//
 		console.log(' \033[31m Error: '+e);
 	});
-},10000)
+},10000);
+
+var mario = require('mario-mario');
+mario.plumbing({
+	port: 10010,
+	http: {
+		get: {
+			'/': function (q,r) {
+				return r.send({get:'/bot'});
+			},
+			'/bot': function (q,r) {
+					return r.send({
+					cash: cash,
+					btc: btc,
+					profit: profit,
+					rate: rate,
+					prediction: prediction
+				});
+			}
+		}
+	}
+});
