@@ -3,7 +3,8 @@ var N = require('brain').NeuralNetwork;
 
 var trainingData = [];
 var predictions = [];
-var cash = 20;
+var buyIn = 15;
+var cash = 15;
 var btc = 0;
 var profit = 0;
 var rate = 0;
@@ -38,10 +39,10 @@ function stay() {
 }
 
 function chooseDestiny(a,b,buyRate,sellRate) {
-	if (a.buy < b.buy) {
+	if (a.buy > b.buy) {
 		buy(buyRate);
 		prediction = 'buy';
-	} else if (a.buy > b.buy) {
+	} else if (a.buy < b.buy) {
 		sell(sellRate);
 		prediction = 'sell';
 	} else {
@@ -65,7 +66,7 @@ function callback(d) {
 		rate,
 		rate
 	);
-	profit = (((btc * d[0].sell) + cash) - 20);
+	profit = (((btc * d[0].sell) + cash) - buyIn);
 }
 
 function process(p) {
@@ -122,7 +123,7 @@ setInterval(function(){
 		//
 		console.log(' \033[31m Error: '+e);
 	});
-},7000)
+},10000)
 
 
 
