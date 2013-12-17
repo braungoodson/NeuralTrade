@@ -1,15 +1,16 @@
 var h = require('https');
 var N = require('brain').NeuralNetwork;
 
+var ticker;
 var trainingData = [];
 var predictions = [];
-var buyIn = 15;
-var cash = 15;
+var buyIn = 10000;
+var cash = 10000;
 var btc = 0;
 var profit = 0;
 var rate = 0;
 var prediction;
-var chip = .01;
+var chip = .5;
 var fee = .0025;
 
 predictions.push({});
@@ -63,8 +64,8 @@ function callback(d) {
 	chooseDestiny(
 		predictions[predictions.length-1],
 		predictions[predictions.length-2],
-		rate,
-		rate
+		d[0].sell,
+		d[0].buy
 	);
 	profit = (((btc * d[0].sell) + cash) - buyIn);
 }
@@ -74,6 +75,7 @@ function process(p) {
 }
 
 function parse(d) {
+	ticker = d.ticker;
 	var x = .000001;
 	var y = .0000000001;
 	var z = .00000000001;
@@ -127,11 +129,14 @@ setInterval(function(){
 
 var mario = require('mario-mario');
 mario.plumbing({
-	port: 10010,
+	port: 10022,
 	http: {
 		get: {
 			'/': function (q,r) {
 				return r.send({get:'/bot'});
+			},
+			'/ticker': function(q,r) {
+				return r.send({ticker:ticker});
 			},
 			'/bot': function (q,r) {
 					return r.send({
@@ -145,3 +150,20 @@ mario.plumbing({
 		}
 	}
 });
+
+/*
+
+predictions.push({
+		input: (function(p){
+			return {
+				
+			};
+		}(n.run(o))), 
+		output: {
+
+		}
+	});
+	var nn = new N();
+	nn.train();
+
+*/
