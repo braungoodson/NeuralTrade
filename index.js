@@ -1,175 +1,287 @@
-#!/usr/bin/env node 
+var h = require('https');
+var N = require('brain').NeuralNetwork;
 
-/*
-
-	Notes:
-
-		* null
-
-*/
-
-var spawn = require('child_process').spawn;
-var bashcoin = spawn('./node_modules/bashcoin/bashcoin.js',['-c','-A']);
-var brain = require('brain');
-var NeuralNetwork = brain.NeuralNetwork;
-var trainedCounter = 0;
-var lastUpdate = {
-	buy: null,
-	sell: null,
-	high: null,
-	low: null,
-	avg: null,
-	vol: null,
-	vwap: null,
-	last: null,
-	spread: null
-};
-var updates = [];
-var cash = 10000;
+var trainingData = [];
+var predictions = [];
+var buyIn = 1500;
+var cash = 1500;
 var btc = 0;
+var profit = 0;
 var rate = 0;
 var prediction;
-var output = [];
-var s;
-var buyout = 0;
-var predictions = null;
-var firstTime = true;
+var chip = .5;
+var fee = .0025;
 
-function stream(s) {
-	process.stdout.write('\r');
-	process.stdout.write(s);
+predictions.push({});
+
+function _process(_) {
+	console.log(_);
 }
 
 function buy(r) {
-	if ((1 * r) <= cash) {
-		var numBitcoins = 1;
-		cash = cash - (numBitcoins*r);
-		btc = btc + numBitcoins;
+	var cost = ((r * chip) + fee);
+	if (cost <= cash) {
+		cash = cash - cost;
+		btc = btc + chip;
 	}
 }
 
 function sell(r) {
-	if (btc >= 1) {
-		var numBitcoins = 1;
-		cash = cash + (numBitcoins*r);
-		btc = btc - numBitcoins;
+	var sale = (fee + (chip * r));
+	if (btc >= chip) {
+		cash = cash + sale;
+		btc = btc - chip;
 	}
 }
 
-bashcoin.stdout.on('data',function(d){
-	if (d.length > 1) {
-		function parse(p) {
-			var u = {};
-			var j = p.toString().split('\n');
-			for (var i in j) {
-				j[i] = j[i].replace(' ','')
-				var k = j[i].split('\t');
-				if (k[1]) {
-					if (k[1].indexOf('BTC') > 0) {
-						u[k[0]] = parseFloat(k[1].split('BTC')[0]);
-					} else {
-						var x = k[1].split('$');
-						u[k[0]] = parseFloat(x[x.length-1]);
-					}
-				}
-			}
-			return u;
-		}
-		function process_(u) {
-			for (var i in u) {
-				lastUpdate[i] = u[i];
-			}
-		}
-		function clone(c) {
-			var _ = {};
-			for (var i in c) {
-				_[i] = c[i] * .00000001;
-			}
-			return _;
-		}
-		var update = parse(d);
-		process_(update);
-		updates.push(
-			{
-				input: {
-					date_: new Date().getTime()
-				},
-				output: clone(lastUpdate)
-			}
-		);
-		var neuralNetwork = new NeuralNetwork();
-		neuralNetwork.train(updates);
-		output.push(neuralNetwork.run({
-			date_: new Date().getTime() + 30000
-		}));
-		trainedCounter++;
-		if (output.length > 1) {
-			if (output[output.length-1].buy > output[output.length-2].buy) {
-				prediction = 'buy';
-				buy(lastUpdate.buy);
-			} else if (output[output.length-1].buy < output[output.length-2].buy) {
-				prediction = 'sell';
-				sell(lastUpdate.sell);
-			} else {
-				prediction = 'stay';
-			}
-		}
-		rate = ((lastUpdate.buy+lastUpdate.sell)/2);
-		buyout = (btc * lastUpdate.sell) + cash;
-		if (firstTime) {
-			firstTime = false;
-			buy(lastUpdate.buy);
-			buy(lastUpdate.buy);
-			buy(lastUpdate.buy);
-			buy(lastUpdate.buy);
-			buy(lastUpdate.buy);
-			buy(lastUpdate.buy);
-			buy(lastUpdate.buy);
-			buy(lastUpdate.buy);
-			buy(lastUpdate.buy);
-			buy(lastUpdate.buy);
-		}
-		s = ' \033[35mt\033[0m ' + trainedCounter +
-			' \033[32m$\033[0m ' + cash +
-			' \033[33mBTC\033[0m ' + btc +
-			' \033[36mRate\033[0m ' + rate +
-			' \033[31mPrediction\033[0m ' + prediction +
-			' \033[34mBuyout\033[0m ' + buyout;
-		predictions = {
-			t: trainedCounter,
-			cash: cash,
-			btc: btc,
-			rate: rate,
-			prediction: prediction,
-			buyout: buyout,
-			profit: buyout - 10000
-		};
-		console.log(s);
+function stay() {
+	return null;
+}
+
+function chooseDestiny(a,b,buyRate,sellRate) {
+	if (a.buy > b.buy) {
+		buy(buyRate);
+		prediction = 'buy';
+	} else if (a.buy < b.buy) {
+		sell(sellRate);
+		prediction = 'sell';
+	} else {
+		stay();
+		prediction = 'stay';
 	}
-});
+}
 
-bashcoin.stderr.on('data',function(d){
-	process.stdout.write(d);
-});
+function callback(d) {
+	var n = new N();
+	trainingData.push(d[1]);
+	n.train(trainingData);
+	var o = {
+		date: (new Date().toUTCString() + 10000) * .00000000001
+	};
+	predictions.push(n.run(o));
+	rate = ((d[0].sell+d[0].buy)/2);
+	chooseDestiny(
+		predictions[predictions.length-1],
+		predictions[predictions.length-2],
+		rate,
+		rate
+	);
+	profit = (((btc * d[0].sell) + cash) - buyIn);
+}
 
-bashcoin.on('close',function(d){
-	process.stdout.write(d);
-});
+function process(p) {
+	callback(p);
+}
 
-var mario = require('mario-mario');
-mario.plumbing({
-	port: 10004,
-	http: {
-		get: {
-			'/': function (q,r) {
+function parse(d) {
+	var x = .000001;
+	var y = .0000000001;
+	var z = .00000000001;
+	var i = {
+		date: d.ticker.updated * z
+	};
+	var o = {
+		buy: d.ticker.buy * x,
+		sell: d.ticker.sell * x,
+		high: d.ticker.high * x,
+		low: d.ticker.low * x,
+		avg: d.ticker.avg * x,
+		vol: d.ticker.vol * y,
+		vol_cur: d.ticker.vol_cur * y
+	};
+	return process([
+		{buy:d.ticker.buy,sell:d.ticker.sell},
+		{input:i,output:o}
+	]);
+}
 
-			},
-			'/echo': function (q,r) {
-				return r.send({echo : 'echo'});
-			},
-			'/predictions': function(q,r) {
-				return r.send(predictions);
+function dump() {
+	console.log('');
+	console.log('          \033[32m$\033[0m '+cash);
+	console.log('        \033[33mBTC\033[0m '+btc);
+	console.log('     \033[34mProfit\033[0m '+profit);
+	console.log('       \033[35mRate\033[0m '+rate);
+	console.log(' \033[31mPrediction\033[0m '+prediction);
+}
+
+setInterval(function(){
+	h.get('https://btc-e.com/api/2/btc_usd/ticker',function(r){
+		var b = '';
+		r.on('data',function(c){
+			b += c;
+		});
+		r.on('end',function(d){
+			try {
+				var d = JSON.parse(b);
+				parse(d);
+			} catch (e) {
+				console.log('\033[31m Could not parse feed: '+e+'\033[0m');
 			}
-		}
-	}
+			dump();
+		});
+	}).on('error',function(r){
+		//
+		console.log(' \033[31m Error: '+e);
+	});
+},10000)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+var request = require('request');
+var assert = require('assert');
+request('https://btc-e.com/api/2/btc_usd/ticker',function(e,r,b){
+	assert(!e);
+	console.log(b);
 });
+*/
+
+/*
+
+var https = require('https');
+https.get('https://btc-e.com/api/2/btc_usd/ticker',function(r){
+	//console.log(' \033[33mresult: \033[0m'+r);
+	r.on('data',function(d){
+		process.stdout.write(' \033[34mstream:\033[0m '+d);
+	});
+}).on('error',function(r){
+	console.log(' \033[320mError: '+e);
+});
+
+
+*/
+
+/*
+
+
+var https = require('https');
+var q = https.request({
+	hostname: 'btc-e.com',
+	port: 443,
+	path: '/api/2/btc_usd/ticker',
+	method: 'GET' 
+},function(r){
+	r.on('data',function(d){
+		console.log(d);
+	});
+});
+
+*/
+
+/*
+
+// curl -k https://localhost:8000/
+var https = require('https');
+var fs = require('fs');
+
+var options = {
+  key: fs.readFileSync('./brauns-key.pem'),
+  cert: fs.readFileSync('./brauns-cert.pem')
+};
+
+https.createServer(options, function (req, res) {
+  res.writeHead(200);
+  res.end("hello world\n");
+}).listen(8000);
+
+*/
+
+
+/*
+var http = require('http');
+http.get('http://btc-e.com/api/2/btc_usd/ticker',function(r){
+	console.log(r);
+}).on('error',function(e){throw e;});
+*/
+/*
+module.exports = function () {
+	var http = require('http');
+	return {
+		go: go
+	};
+	//setInterval(handleTimeLoop,Math.abs(Math.random() * 10000));
+	//https://btc-e.com/api/2/btc_usd/ticker
+	var btce = {
+		endpoints: {
+			btc2Usd: 'https://btc-e.com/api/2/btc_usd/ticker'
+		}
+	};
+	function parse(p) {
+		console.log(p);
+	}
+	function defaultEndpointHandler(r) {
+		parse(r);
+	}
+	function defaultErrorHandler(e) {
+		throw e;
+	}
+	function handleTimeLoop() {
+		http
+			.get(btce.endpoints.default_,defaultEndpointHandler)
+			.on('error',defaultErrorHandler)
+			;
+	}
+	function enterTimeLoop() {
+		defaultEndpointHandler();
+	}
+	function go() {
+		enterTimeLoop();
+	}
+}
+
+	Usage:
+
+		var btce = require('btc-e');
+		btce.go();
+
+
+*/
