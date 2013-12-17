@@ -25,7 +25,7 @@ var lastUpdate = {
 	spread: null
 };
 var updates = [];
-var cash = 10;
+var cash = 10000;
 var btc = 0;
 var rate = 0;
 var prediction;
@@ -33,6 +33,7 @@ var output = [];
 var s;
 var buyout = 0;
 var predictions = null;
+var firstTime = true;
 
 function stream(s) {
 	process.stdout.write('\r');
@@ -40,16 +41,16 @@ function stream(s) {
 }
 
 function buy(r) {
-	if ((.01 * r) <= cash) {
-		var numBitcoins = .01;
+	if ((1 * r) <= cash) {
+		var numBitcoins = 1;
 		cash = cash - (numBitcoins*r);
 		btc = btc + numBitcoins;
 	}
 }
 
 function sell(r) {
-	if (btc >= .01) {
-		var numBitcoins = .01;
+	if (btc >= 1) {
+		var numBitcoins = 1;
 		cash = cash + (numBitcoins*r);
 		btc = btc - numBitcoins;
 	}
@@ -99,7 +100,7 @@ bashcoin.stdout.on('data',function(d){
 		var neuralNetwork = new NeuralNetwork();
 		neuralNetwork.train(updates);
 		output.push(neuralNetwork.run({
-			date_: new Date().getTime() + 600000
+			date_: new Date().getTime() + 30000
 		}));
 		trainedCounter++;
 		if (output.length > 1) {
@@ -115,6 +116,19 @@ bashcoin.stdout.on('data',function(d){
 		}
 		rate = ((lastUpdate.buy+lastUpdate.sell)/2);
 		buyout = (btc * lastUpdate.sell) + cash;
+		if (firstTime) {
+			firstTime = false;
+			buy(lastUpdate.buy);
+			buy(lastUpdate.buy);
+			buy(lastUpdate.buy);
+			buy(lastUpdate.buy);
+			buy(lastUpdate.buy);
+			buy(lastUpdate.buy);
+			buy(lastUpdate.buy);
+			buy(lastUpdate.buy);
+			buy(lastUpdate.buy);
+			buy(lastUpdate.buy);
+		}
 		s = ' \033[35mt\033[0m ' + trainedCounter +
 			' \033[32m$\033[0m ' + cash +
 			' \033[33mBTC\033[0m ' + btc +
@@ -128,7 +142,7 @@ bashcoin.stdout.on('data',function(d){
 			rate: rate,
 			prediction: prediction,
 			buyout: buyout,
-			profit: buyout - 10
+			profit: buyout - 10000
 		};
 		console.log(s);
 	}
@@ -144,7 +158,7 @@ bashcoin.on('close',function(d){
 
 var mario = require('mario-mario');
 mario.plumbing({
-	port: 10000,
+	port: 10004,
 	http: {
 		get: {
 			'/': function (q,r) {
