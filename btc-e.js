@@ -3,10 +3,12 @@ var N = require('brain').NeuralNetwork;
 
 var trainingData = [];
 var predictions = [];
-var cash = 1000;
+var cash = 20;
 var btc = 0;
 var profit = 0;
-var chip = .5;
+var rate = 0;
+var prediction;
+var chip = .01;
 var fee = .0025;
 
 predictions.push({});
@@ -36,12 +38,15 @@ function stay() {
 }
 
 function chooseDestiny(a,b,buyRate,sellRate) {
-	if (a.buy > b.buy) {
+	if (a.buy < b.buy) {
 		buy(buyRate);
-	} else if (a.buy < b.buy) {
+		prediction = 'buy';
+	} else if (a.buy > b.buy) {
 		sell(sellRate);
+		prediction = 'sell';
 	} else {
 		stay();
+		prediction = 'stay';
 	}
 }
 
@@ -53,13 +58,14 @@ function callback(d) {
 		date: (new Date().toUTCString() + 10000) * .00000000001
 	};
 	predictions.push(n.run(o));
+	rate = ((d[0].sell+d[0].buy)/2);
 	chooseDestiny(
 		predictions[predictions.length-1],
 		predictions[predictions.length-2],
-		d[0].buy,
-		d[0].sell
+		rate,
+		rate
 	);
-	profit = (((btc * d[0].sell) + cash) - 1000);
+	profit = (((btc * d[0].sell) + cash) - 20);
 }
 
 function process(p) {
@@ -90,9 +96,11 @@ function parse(d) {
 
 function dump() {
 	console.log('');
-	console.log('      \033[32m$\033[0m '+cash);
-	console.log('    \033[33mBTC\033[0m '+btc);
-	console.log(' \033[34mProfit\033[0m '+profit);
+	console.log('          \033[32m$\033[0m '+cash);
+	console.log('        \033[33mBTC\033[0m '+btc);
+	console.log('     \033[34mProfit\033[0m '+profit);
+	console.log('       \033[35mRate\033[0m '+rate);
+	console.log(' \033[31mPrediction\033[0m '+prediction);
 }
 
 setInterval(function(){
@@ -114,7 +122,7 @@ setInterval(function(){
 		//
 		console.log(' \033[31m Error: '+e);
 	});
-},3000)
+},7000)
 
 
 
