@@ -1,7 +1,9 @@
-<?php
+var KEY = 'BB8TIFKG-MW2GOGLE-1G60QKNL-DTKWTISA-TR71OI8C';
+var SECRET = '465cec0c07565b19829184809de5bb291c791cd00fc63a03c2f96ead01ec4fab';
 
-require_once('./node_modules/btc-e-trade-api/btce-api.php');
+var tradeApi = require('btc-e-trade-api');
 
-$BTCeAPI = new BTCeAPI('BB8TIFKG-MW2GOGLE-1G60QKNL-DTKWTISA-TR71OI8C','465cec0c07565b19829184809de5bb291c791cd00fc63a03c2f96ead01ec4fab');
+tradeApi.init(KEY,SECRET);
 
-print_r($BTCeAPI->getPairFee('btc_usd'));
+tradeApi.getInfo(console.log);
+tradeApi.getFee(console.log);
